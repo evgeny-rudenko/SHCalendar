@@ -1,0 +1,22 @@
+# Go
+bin/
+build/
+*.test
+*.out
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Caches
+**/.DS_Store
+**/__pycache__/
+**/*.log
+server.log
+
+# Modules cache not needed in context
+**/node_modules/

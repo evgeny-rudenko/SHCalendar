@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  calendar:
+    build: .
+    image: shcalendar:latest
+    container_name: shcalendar-service
+    user: "0:0"
+    restart: unless-stopped
+    environment:
+      - PORT=8085
+      - DB_PATH=/tmp/calendar.db
+    ports:
+      - "8085:8085"
+    volumes:
+      - shcalendar_data:/tmp
+
+volumes:
+  shcalendar_data:

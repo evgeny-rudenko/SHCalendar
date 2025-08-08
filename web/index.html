@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" href="/favicon.ico" />
+  <title>SHCalendar — Simple Habits Calendar</title>
+  <style>
+    :root { --fg: #222; --bg: #fafafa; --muted: #888; --accent: #0a84ff; --marked: #d00; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--fg); background: var(--bg); }
+    header { position: sticky; top: 0; background: #fff; padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    h1 { font-size: 18px; margin: 0; }
+    main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+    .layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+    .sidebar { background:#fff; border:1px solid #eee; border-radius:8px; padding:8px; position: sticky; top:64px; max-height: calc(100vh - 80px); overflow:auto; }
+    .habit-item { display:flex; align-items:center; gap:8px; padding:8px; border-radius:6px; cursor:pointer; border:1px solid transparent; }
+    .habit-item:hover { background:#fafafa; }
+    .habit-item.active { border-color: var(--accent); background: rgba(10,132,255,.06); }
+    .months { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    .month { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.03); }
+    .month h2 { font-size: 16px; margin: 8px; text-align: center; }
+    .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 8px; }
+    .dow { font-size: 12px; color: var(--muted); text-align: center; }
+    .day { position: relative; aspect-ratio: 1 / 1; border: 1px solid #eee; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; background: #fff; }
+    .day:hover { outline: 2px solid rgba(10,132,255,.2); }
+    .day.disabled { background: #f7f7f7; color: #bbb; cursor: default; }
+    .day.weekend { background: #f6f6fb; }
+    .num { position: absolute; top: 4px; right: 6px; font-size: 10px; color: var(--muted); }
+    .x { font-weight: 700; font-size: 22px; color: var(--marked); display: none; }
+    .day.marked .x { display: block; }
+    button { padding: 6px 10px; border: 1px solid #ddd; background: #fff; border-radius: 6px; cursor: pointer; }
+    .sub { color: var(--muted); font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <button id="prev" title="Предыдущий год">◀</button>
+    <h1 style="margin:0;font-size:18px;">
+      <span id="year"></span>
+      <span id="habitTitle" class="sub"></span>
+    </h1>
+    <button id="next" title="Следующий год">▶</button>
+  </header>
+  <main>
+    <div class="layout">
+      <aside class="sidebar" id="habits"></aside>
+      <section class="content">
+        <div class="months" id="months"></div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const RU_MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+    let year = new Date().getFullYear();
+    let selectedHabit = null;
+    let habits = [];
+
+    const yearEl = document.getElementById('year');
+    const habitTitleEl = document.getElementById('habitTitle');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+
+    function pad(n){ return n.toString().padStart(2,'0'); }
+
+    function renderHabits(){
+      const box = document.getElementById('habits');
+      box.innerHTML = '';
+      habits.forEach(h => {
+        const item = document.createElement('div');
+        item.className = 'habit-item' + (h.code === selectedHabit ? ' active' : '');
+        item.textContent = h.name;
+        item.addEventListener('click', () => {
+          if (selectedHabit !== h.code){
+            selectedHabit = h.code;
+            habitTitleEl.textContent = '• ' + h.name;
+            renderHabits();
+            loadAndRender();
+          }
+        });
+        box.appendChild(item);
+      });
+    }
+
+    function buildCalendar(marks){
+      yearEl.textContent = year;
+      const container = document.getElementById('months');
+      container.innerHTML = '';
+      for(let m=0; m<12; m++){
+        const wrap = document.createElement('div');
+        wrap.className = 'month';
+        const h2 = document.createElement('h2');
+        h2.textContent = RU_MONTHS[m];
+        wrap.appendChild(h2);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+
+        const first = new Date(year, m, 1);
+        const firstDow = (first.getDay()+6)%7; // 0..6, Mon=0
+        const daysInMonth = new Date(year, m+1, 0).getDate();
+
+        for(let i=0;i<firstDow;i++){
+          const empty = document.createElement('div'); empty.className='day disabled'; grid.appendChild(empty);
+        }
+        for(let d=1; d<=daysInMonth; d++){
+          const dateStr = year + '-' + pad(m+1) + '-' + pad(d);
+          const cell = document.createElement('div');
+          cell.className = 'day';
+          const dow = (new Date(year, m, d).getDay()+6)%7; // 0..6 Mon..Sun
+          if(dow>=5) cell.classList.add('weekend');
+          cell.dataset.date = dateStr;
+          if(marks.has(dateStr)) cell.classList.add('marked');
+
+          const num = document.createElement('div'); num.className='num'; num.textContent = d; cell.appendChild(num);
+          const x = document.createElement('div'); x.className='x'; x.textContent='×'; cell.appendChild(x);
+
+          cell.addEventListener('click', async () => {
+            if(!selectedHabit) return;
+            try {
+              const res = await fetch('/api/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({date: dateStr, habit: selectedHabit}) });
+              if(!res.ok) throw new Error('Network');
+              const data = await res.json();
+              if(data.marked){ cell.classList.add('marked'); marks.add(dateStr); }
+              else { cell.classList.remove('marked'); marks.delete(dateStr); }
+            } catch(e){ console.error(e); alert('Не удалось сохранить отметку'); }
+          });
+
+          grid.appendChild(cell);
+        }
+        wrap.appendChild(grid);
+        container.appendChild(wrap);
+      }
+    }
+
+    async function loadAndRender(){
+      if(!selectedHabit) return;
+      try{
+        const res = await fetch('/api/marks?year=' + year + '&habit=' + encodeURIComponent(selectedHabit));
+        const list = await res.json();
+        const marks = new Set(list);
+        buildCalendar(marks);
+      }catch(e){
+        console.error(e);
+        buildCalendar(new Set());
+      }
+    }
+
+    async function init(){
+      try{
+        const res = await fetch('/api/habits');
+        habits = await res.json();
+        if(habits.length){
+          selectedHabit = habits[0].code;
+          habitTitleEl.textContent = '• ' + habits[0].name;
+        }
+        renderHabits();
+        loadAndRender();
+      }catch(e){
+        console.error(e);
+      }
+    }
+
+    prevBtn.addEventListener('click', () => { year -= 1; loadAndRender(); });
+    nextBtn.addEventListener('click', () => { year += 1; loadAndRender(); });
+
+    init();
+  </script>
+</body>
+</html>
