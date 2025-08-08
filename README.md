@@ -25,10 +25,19 @@ docker build -t shcalendar:latest .
 # persistent data under named volume
 Docker volume "shcalendar_data" will be created by compose
 
-docker compose up --build
+# run with compose (bind-mounts habits.txt from host)
+docker compose up --build -d
 ```
 
-Compose binds port 8085 and mounts a volume at /data; the app uses DB_PATH=/data/calendar.db.
+Compose binds port 8086 and mounts:
+- a named volume at /tmp for the SQLite DB (DB_PATH=/tmp/calendar.db)
+- the host file ./habits.txt into the container at /app/habits.txt (read-only)
+
+This way habits.txt is read from the host on each container start. To change habits, edit ./habits.txt on the host and restart the container:
+
+```bash
+docker compose restart calendar
+```
 
 ## Habits list
 

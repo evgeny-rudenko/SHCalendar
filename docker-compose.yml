@@ -8,12 +8,14 @@ services:
     user: "0:0"
     restart: unless-stopped
     environment:
-      - PORT=8085
+      - PORT=8086
       - DB_PATH=/tmp/calendar.db
+      - HABITS_FILE=/app/habits.txt
     ports:
-      - "8085:8085"
+      - "8086:8086"
     volumes:
       - shcalendar_data:/tmp
+      - ./habits.txt:/app/habits.txt:ro
 
 volumes:
   shcalendar_data:

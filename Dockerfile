@@ -27,8 +27,8 @@ WORKDIR /app
 
 COPY --from=builder /out/server /server
 
-EXPOSE 8085
+EXPOSE 8086
 
-ENV PORT=8085
+ENV PORT=8086
 
 ENTRYPOINT ["/server"]

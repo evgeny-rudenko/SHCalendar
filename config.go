@@ -25,7 +25,7 @@ func getenv(key, def string) string {
 
 func loadConfig() AppConfig {
 	return AppConfig{
-		Port:              getenv("PORT", "8085"),
+		Port:              getenv("PORT", "8086"),
 		DBPath:            getenv("DB_PATH", dbFile),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
