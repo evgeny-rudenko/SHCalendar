@@ -1,6 +1,7 @@
 # SHCalendar — Simple Habits Calendar
 
 A tiny single-page app to mark habit completion on a yearly calendar. Backend: Go + SQLite (pure Go driver). Frontend is embedded HTML.
+<img width="1407" height="887" alt="изображение" src="https://github.com/user-attachments/assets/da2d5d2f-e16a-4653-b83d-40732baf12a8" />
 
 ## Run locally
 
